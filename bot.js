@@ -4,7 +4,10 @@ const axios = require('axios');
 
 const TOKEN = '8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM';
 const GROUP_ID = -5214080706; // Remplacez par votre group ID
-const API_URL = 'https://VOTRE-API-URL/api/validate'; // À remplacer par l'URL de votre backend (Render, Vercel...)
+const API_URLS = [
+  'https://bot-js-3ptn.onrender.com/api/validate',
+  'https://bulboxcoupon.onrender.com/api/validate'
+];
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 
@@ -28,15 +31,21 @@ bot.onText(/\/coupon (.+)/, (msg, match) => {
 // Quand un admin clique sur OUI/NON
 bot.on('callback_query', async (query) => {
   const [result, requestId] = query.data.split('|');
-  // Appelez l'API pour enregistrer la validation
-  try {
-    await axios.post(API_URL, { requestId, result });
+  // Appelez les deux APIs pour enregistrer la validation
+  let success = false;
+  await Promise.all(API_URLS.map(async (url) => {
+    try {
+      await axios.post(url, { requestId, result });
+      success = true;
+    } catch (e) {}
+  }));
+  if (success) {
     bot.answerCallbackQuery(query.id, { text: `Réponse enregistrée: ${result}` });
     bot.editMessageText(`Coupon ${requestId} validé: ${result === 'OUI' ? '✅ OUI' : '❌ NON'}`, {
       chat_id: query.message.chat.id,
       message_id: query.message.message_id
     });
-  } catch (e) {
+  } else {
     bot.answerCallbackQuery(query.id, { text: 'Erreur API' });
   }
 });
