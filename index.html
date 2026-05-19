@@ -335,11 +335,13 @@
             }
             // Générer un identifiant unique pour la requête
             const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-            // Message d'attente
-            const waitMsg = document.createElement('div');
+            // Message d'attente stylé
+            let waitMsg = document.getElementById('waitMsg');
+            if (waitMsg) waitMsg.remove();
+            waitMsg = document.createElement('div');
             waitMsg.id = 'waitMsg';
-            waitMsg.style = 'background:#e3f2fd;color:#1976d2;padding:18px 0;margin:18px 0;border-radius:8px;font-size:1.1rem;font-weight:500;';
-            waitMsg.innerText = '⏳ Veuillez patienter, votre code est en cours de vérification par notre API...';
+            waitMsg.style = 'background:#e3f2fd;color:#1976d2;padding:18px 0;margin:18px 0 0 0;border-radius:8px;font-size:1.13rem;font-weight:600;box-shadow:0 2px 12px rgba(33,150,243,0.10);max-width:440px;margin-left:auto;margin-right:auto;';
+            waitMsg.innerHTML = '<span style="font-size:1.5rem;">⏳</span><br>Attendez quelques instants, votre coupon est en cours de vérification...';
             document.querySelector('.main-container').appendChild(waitMsg);
 
             // Les deux URLs de backend
@@ -368,7 +370,11 @@
 
             if (!sent) {
                 document.getElementById('waitMsg').remove();
-                alert('Erreur lors de l\'envoi. Merci de réessayer.');
+                const errorMsg = document.createElement('div');
+                errorMsg.style = 'background:#ffcdd2;color:#b71c1c;padding:18px 0;margin:18px 0 0 0;border-radius:8px;font-size:1.13rem;font-weight:600;box-shadow:0 2px 12px rgba(33,150,243,0.10);max-width:440px;margin-left:auto;margin-right:auto;';
+                errorMsg.innerHTML = '<span style="font-size:1.5rem;">❌</span><br>Erreur lors de l\'envoi. Merci de réessayer ou vérifiez votre connexion.';
+                document.querySelector('.main-container').appendChild(errorMsg);
+                setTimeout(() => errorMsg.remove(), 5000);
                 return;
             }
 
@@ -400,13 +406,20 @@
                 })).catch(() => {});
             }
             document.getElementById('waitMsg').remove();
+            let resultMsg = document.getElementById('resultMsg');
+            if (resultMsg) resultMsg.remove();
+            resultMsg = document.createElement('div');
+            resultMsg.id = 'resultMsg';
+            resultMsg.style = 'background:#e3f2fd;color:#1976d2;padding:18px 0;margin:18px 0 0 0;border-radius:8px;font-size:1.13rem;font-weight:600;box-shadow:0 2px 12px rgba(33,150,243,0.10);max-width:440px;margin-left:auto;margin-right:auto;';
             if (result === 'OUI') {
-                alert('✅ Ce code est validé, vous pouvez l\'utiliser.');
+                resultMsg.innerHTML = '<span style="font-size:1.5rem;">✅</span><br>Votre coupon est <b>valide</b> !';
             } else if (result === 'NON') {
-                alert('❌ Code invalide, veuillez vérifier votre saisie.');
+                resultMsg.innerHTML = '<span style="font-size:1.5rem;">❌</span><br>Votre coupon n\'est pas valide.';
             } else {
-                alert('⏳ Temps de validation dépassé, veuillez réessayer plus tard.');
+                resultMsg.innerHTML = '<span style="font-size:1.5rem;">⏳</span><br>Temps de validation dépassé, veuillez réessayer plus tard.';
             }
+            document.querySelector('.main-container').appendChild(resultMsg);
+            setTimeout(() => { if(resultMsg) resultMsg.remove(); }, 7000);
             document.getElementById('codeForm').reset();
             document.getElementById('codeForm').classList.add('hidden');
         });
