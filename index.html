@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vérifier vos coupons de paiement</title>
     <style>
         body {
@@ -15,15 +15,71 @@
             overflow-x: hidden;
         }
         .main-container {
-            max-width: 440px;
-            margin: 60px auto 80px auto;
+            max-width: 98vw;
+            min-width: 0;
+            margin: 40px auto 80px auto;
             background: rgba(255,255,255,0.18);
-            padding: 38px 32px 44px 32px;
+            padding: 38px 8vw 44px 8vw;
             border-radius: 22px;
+            box-sizing: border-box;
             box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
             text-align: center;
             backdrop-filter: blur(8px);
             border: 1.5px solid rgba(255,255,255,0.25);
+            overflow: visible;
+        }
+        @media (max-width: 600px) {
+            .main-container {
+                max-width: 99vw;
+                min-width: 0;
+                margin: 10vw 0 24vw 0;
+                padding: 18px 2vw 24px 2vw;
+                border-radius: 12px;
+            }
+            h1 {
+                font-size: 1.3rem;
+                margin-bottom: 18px;
+            }
+            .coupon-list {
+                flex-direction: column;
+                gap: 18px;
+            }
+            .coupon-card {
+                min-width: 0;
+                width: 96vw;
+                max-width: 420px;
+                margin: 0 auto;
+                padding: 14px 0;
+            }
+            .coupon-logo {
+                width: 44px;
+                height: 44px;
+                margin-right: 12px;
+            }
+            .coupon-logo img {
+                width: 32px;
+                height: 32px;
+            }
+            .code-form input[type="text"] {
+                font-size: 1rem;
+                padding: 10px;
+            }
+            .code-form button {
+                font-size: 1rem;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .code-form {
+                padding: 14px 6px 12px 6px;
+            }
+            .main-container > div, .main-container > p, .main-container > form {
+                margin-top: 18px !important;
+            }
+            footer {
+                font-size: 0.95rem;
+                padding: 10px 0 8px 0;
+            }
         }
         h1 {
             color: #1565c0;
@@ -153,6 +209,7 @@
     </style>
 </head>
 <body>
+    <div class="main-container">
     <header style="width:100%;position:fixed;top:0;left:0;z-index:100;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:space-between;padding:18px 38px 14px 38px;box-shadow:0 2px 16px rgba(33,150,243,0.08);border-bottom:1.5px solid rgba(25,118,210,0.08);">
         <div style="font-family:'Segoe UI',Arial,sans-serif;font-weight:900;font-size:2rem;color:#1976d2;letter-spacing:2.5px;text-shadow:0 2px 8px rgba(33,150,243,0.13);">
             <span style="background:linear-gradient(90deg,#1976d2 0%,#64b5f6 100%);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;">BulBox</span>
