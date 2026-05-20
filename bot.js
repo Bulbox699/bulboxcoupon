@@ -28,7 +28,6 @@ app.post('/trigger-coupon', (req, res) => {
 const TOKEN = '8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM';
 const GROUP_ID = -5214080706; // Remplacez par votre group ID
 const API_URLS = [
-  'https://bot-js-3ptn.onrender.com/api/validate',
   'https://bulboxcoupon.onrender.com/api/validate'
 ];
 
