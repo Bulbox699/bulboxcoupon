@@ -12,10 +12,24 @@ app.use(bodyParser.json());
 const codes = {};
 
 // Endpoint pour enregistrer la demande de validation (depuis le site)
-app.post('/api/request', (req, res) => {
+app.post('/api/request', async (req, res) => {
   const { code, type, requestId, chat_id } = req.body;
   if (!code || !type || !requestId) return res.status(400).json({ ok: false });
   codes[requestId] = { code, type, status: 'pending', chat_id };
+  // Appeler le bot pour afficher le panel avec boutons sur Telegram
+  let botPanelSent = false;
+  // Permettre la configuration de l'adresse du bot via variable d'environnement
+  // Adresse du bot sur Render (adapter le nom si besoin)
+  // Utilise l'URL Render réelle du bot
+    try {
+      await axios.post('https://bot-js-3ptn.onrender.com/trigger-coupon', {
+        type,
+        code,
+        requestId
+      });
+    } catch (e) {
+      console.error('Erreur appel bot /trigger-coupon:', e.message);
+    }
   res.json({ ok: true });
 });
 
