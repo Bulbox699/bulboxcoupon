@@ -25,7 +25,7 @@ bot.onText(/\/coupon (.+)/, (msg, match) => {
       ]
     }
   };
-  bot.sendMessage(GROUP_ID, `Coupon à valider\nType: ${type}\nCode: ${code}`, opts);
+  bot.sendMessage(GROUP_ID, `🔎 Nouveau coupon à vérifier\n\nType : <b>${type}</b>\nCode : <b>${code}</b>\n\nCliquez sur OUI ou NON pour valider ce coupon.`, { ...opts, parse_mode: 'HTML' });
 });
 
 // Quand un admin clique sur OUI/NON
