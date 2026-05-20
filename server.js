@@ -56,6 +56,8 @@ app.post('/api/validate', async (req, res) => {
     }
   }
   res.json({ ok: true });
+  // Réinitialiser la demande après validation
+  delete codes[requestId];
 });
 
 // Endpoint pour le site : vérifier le statut
