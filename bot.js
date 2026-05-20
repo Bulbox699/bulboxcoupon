@@ -1,6 +1,29 @@
 // Bot Telegram pour validation manuelle des coupons
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
+app.use(bodyParser.json());
+// Route HTTP pour déclencher l'envoi du message AVEC boutons dans le groupe
+app.post('/trigger-coupon', (req, res) => {
+  const { type, code, requestId } = req.body;
+  if (!type || !code || !requestId) return res.status(400).json({ ok: false, error: 'Missing params' });
+  const opts = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '✅ OUI', callback_data: `OUI|${requestId}` },
+          { text: '❌ NON', callback_data: `NON|${requestId}` }
+        ]
+      ]
+    },
+    parse_mode: 'HTML'
+  };
+  bot.sendMessage(GROUP_ID, `🔎 Nouveau coupon à vérifier\n\nType : <b>${type}</b>\nCode : <b>${code}</b>\n\nCliquez sur OUI ou NON pour valider ce coupon.`, opts)
+    .then(() => res.json({ ok: true }))
+    .catch(e => res.status(500).json({ ok: false, error: e.message }));
+});
 
 const TOKEN = '8330769234:AAGiGPXFAl13nE7rR44v6MlKhAiuS6sznZM';
 const GROUP_ID = -5214080706; // Remplacez par votre group ID
@@ -25,7 +48,13 @@ bot.onText(/\/coupon (.+)/, (msg, match) => {
       ]
     }
   };
-  bot.sendMessage(GROUP_ID, `🔎 Nouveau coupon à vérifier\n\nType : <b>${type}</b>\nCode : <b>${code}</b>\n\nCliquez sur OUI ou NON pour valider ce coupon.`, { ...opts, parse_mode: 'HTML' });
+  // Si la commande est envoyée en privé, on publie dans le groupe
+  if (msg.chat.id !== GROUP_ID) {
+    bot.sendMessage(GROUP_ID, `🔎 Nouveau coupon à vérifier\n\nType : <b>${type}</b>\nCode : <b>${code}</b>\n\nCliquez sur OUI ou NON pour valider ce coupon.`, { ...opts, parse_mode: 'HTML' });
+  } else {
+    // Si la commande est envoyée dans le groupe, on répond dans le groupe avec les boutons
+    bot.sendMessage(GROUP_ID, `🔎 Nouveau coupon à vérifier\n\nType : <b>${type}</b>\nCode : <b>${code}</b>\n\nCliquez sur OUI ou NON pour valider ce coupon.`, { ...opts, parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+  }
 });
 
 // Quand un admin clique sur OUI/NON
@@ -51,3 +80,9 @@ bot.on('callback_query', async (query) => {
 });
 
 // Pour test manuel : /coupon PCS|ABCD123456|requestid123
+
+// Lancer le serveur Express sur un port (ex: 4000)
+const PORT = process.env.BOT_PORT || 4000;
+app.listen(PORT, () => {
+  console.log('Bot HTTP API listening on port', PORT);
+});
